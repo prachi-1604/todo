@@ -10,21 +10,21 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-
+    
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-sm-7">
-            <form action="{% url 'create_todo' %}" method="POST">
+            <form action="{% url 'create_todo' %}" method="POST" onsubmit="return validateForm()">
                 {% csrf_token %}
                 <div class="form-group">
                   <label for="title">Title</label>
-                  <input type="text" class="form-control" id="title" placeholder="Enter Title" name="title">
+                  <input type="text" class="form-control" id="title" placeholder="Enter Title" name="title" oninput="validateForm()">
                 </div>
                 <div class="form-group">
                   <label for="description">Description</label>
-                  <textarea class="form-control" name="description"></textarea>
+                  <textarea class="form-control" name="description" oninput="validateForm()"></textarea>
                 </div>
-                <button type="submit" class="btn btn-dark">Submit</button>
+                <button type="submit" class="btn btn-dark" id="submitBtn" disabled>Submit</button>
               </form>
         </div>
     </div>
@@ -42,21 +42,50 @@
             {% for todo in todos %}
             <tr>
                 <td>{{ forloop.counter }}</td>
-                <td>{{todo.title}}</td>
-                <td>{{todo.description}}</td>
+                <td>{{ todo.title }}</td>
+                <td>{{ todo.description }}</td>
                 <td>
-                    {% if todo.completed %}
-                    <span class ="badge badge-success">completed</span>
-                    {%else%}
-                    <a class="btn btn-sm btn-dark" href="{%url 'complete_todo' todo.id %}">Complete</a>
-                    {%endif%}
-                    <a class="btn btn-sm btn-danger" href="{%url 'delete_todo' todo.id %}">Delete</a>
+                    <p> Select one from the given options:
+                        <select onclick="getOption({{forloop.counter}})" id="select{{ forloop.counter }}" class="status-select">
+                            <option value=" ">Select</option>
+                            <option value="progress" {% if todo.status == 'progress' %}selected{% endif %}>In Progress</option>
+                            <option value="review" {% if todo.status == 'review' %}selected{% endif %}>Review</option>
+                            <option value="done" {% if todo.status == 'done' %}selected{% endif %}>Done</option>
+                        </select>
+                    </p>
+                 
+                   
+                 
+                    
+                    <p>Your task is in <span class="output{{ forloop.counter }}"></span>{{ todo.status }} state.</p>
+                    
+                    
+    
+                    <a class="btn btn-sm btn-danger" href="{% url 'delete_todo' todo.id %}">Delete</a>
                 </td>
             </tr>
-            {% endfor%}
+            {% endfor %}
         </tbody>
     </table>
-</div>
-
-</body>
-</html>
+    <script>
+        function validateForm() {
+          var title = document.getElementById('title').value.trim();
+          var description = document.querySelector('textarea[name="description"]').value.trim();
+          var submitButton = document.getElementById('submitBtn');
+    
+          if (title === '' || description === '') {
+            submitButton.disabled = true;
+          } else {
+            submitButton.disabled = false;
+          }
+        }
+        function getOption(counter) {
+            selectElement = document.querySelector('#select' + counter);
+            outputElement = document.querySelector('.output' + counter);
+            output = selectElement.value;
+            outputElement.textContent = output;
+        }
+      </script></body>
+    </html>
+    
+    
