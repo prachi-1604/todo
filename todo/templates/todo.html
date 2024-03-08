@@ -10,11 +10,11 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-    
+  
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-sm-7">
-            <form action="{% url 'create_todo' %}" method="POST" onsubmit="return validateForm()">
+            <form id="todoForm" action="{% url 'create_todo' %}" method="POST" onsubmit="return submitForm()">
                 {% csrf_token %}
                 <div class="form-group">
                   <label for="title">Title</label>
@@ -24,68 +24,250 @@
                   <label for="description">Description</label>
                   <textarea class="form-control" name="description" oninput="validateForm()"></textarea>
                 </div>
+                <p> Select your task state:
+                  <select id="select1" class="status" name="status" oninput="validateForm()">
+                    <option value="inprogress">In Progress</option>
+                    <option value="review">Review</option>
+                    <option value="done">Done</option>
+                  </select>
+              </p>
+               
                 <button type="submit" class="btn btn-dark" id="submitBtn" disabled>Submit</button>
-              </form>
+
+              
+            </form>
         </div>
     </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>SNo.</th>
-                <th>Title</th>
-                <th>Description</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for todo in todos %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ todo.title }}</td>
-                <td>{{ todo.description }}</td>
-                <td>
-                    <p> Select one from the given options:
-                        <select onclick="getOption({{forloop.counter}})" id="select{{ forloop.counter }}" class="status-select">
-                            <option value=" ">Select</option>
-                            <option value="progress" {% if todo.status == 'progress' %}selected{% endif %}>In Progress</option>
-                            <option value="review" {% if todo.status == 'review' %}selected{% endif %}>Review</option>
-                            <option value="done" {% if todo.status == 'done' %}selected{% endif %}>Done</option>
-                        </select>
-                    </p>
-                 
+    <!-- Tables for different task states -->
+    <div class="row">
+        <div class="col-md-4">
+            <h2>In Progress</h2>
+            <table class="table" id="inprogressTable">
+                <!-- Table header -->
+                <thead>
+                    <tr>
+                        <th>SNo.</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <!-- Table body -->
+                <tbody>
+                  {% for inprogress in inprogress_todos %}
+                    <tr data-todo-id="{{ inprogress.id }}">
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ inprogress.title }}</td>
+                      <td>{{ inprogress.description }}</td>
+                      <td>
+                          <p>Task Status: {{ inprogress.status }}</p>
+                          <select onchange="moveTodo(this, {{ inprogress.id }}, 'inprogressTable')">
+                              <option value="inprogress">In Progress</option>
+                              <option value="review">Review</option>
+                              <option value="done">Done</option>
+                          </select>
+                          <button class="btn btn-sm btn-primary" onclick="advanceTodo(this, {{ inprogress.id }}, 'inprogressTable')">Move</button>
+                          <a class="btn btn-sm btn-danger" href="{% url 'delete_todo' inprogress.id %}">Delete</a>
+
+                      </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+      
+        <div class="col-md-4">
+            <h2>Review</h2>
+            <table class="table" id="reviewTable">
+                <!-- Table header -->
+                <thead>
+                    <tr>
+                        <th>SNo.</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <!-- Table body -->
+                <tbody>
                    
-                 
-                    
-                    <p>Your task is in <span class="output{{ forloop.counter }}"></span>{{ todo.status }} state.</p>
-                    
-                    
-    
-                    <a class="btn btn-sm btn-danger" href="{% url 'delete_todo' todo.id %}">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <script>
-        function validateForm() {
-          var title = document.getElementById('title').value.trim();
-          var description = document.querySelector('textarea[name="description"]').value.trim();
-          var submitButton = document.getElementById('submitBtn');
-    
-          if (title === '' || description === '') {
+                    {% for review_todos in review_todo %}
+                    <tr data-todo-id="{{ review_todos.id }}">
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ review_todos.title }}</td>
+                      <td>{{ review_todos.description }}</td>
+                      <td>
+                          <p>Task Status: {{ review_todos.status }}</p>
+                          <select onchange="moveTodo(this, {{ review_todos.id }}, 'reviewTable')">
+                              <option value="progress">In Progress</option>
+                              <option value="review" selected>Review</option>
+                              <option value="done">Done</option>
+                          </select>
+                          <button class="btn btn-sm btn-primary" onclick="advanceTodo(this, {{ review_todos.id }}, 'reviewTable')">Move</button>
+                          <a class="btn btn-sm btn-danger" href="{% url 'delete_todo' review_todos.id %}">Delete</a>
+                      </td>
+                  </tr>
+
+                     {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-4">
+            <h2>Done</h2>
+            <table class="table" id="doneTable">
+                <!-- Table header -->
+                <thead>
+                    <tr>
+                        <th>SNo.</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <!-- Table body -->
+                <tbody>
+                  {% for done_todos in done_todo %}
+                  <tr data-todo-id="{{ done_todos.id }}">
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ done_todos.title }}</td>
+                      <td>{{ done_todos.description }}</td>
+                      <td>
+                          <p>Task Status: {{ done_todos.status }}</p>
+                          <select onchange="moveTodo(this, {{ done_todos.id }}, 'doneTable')">
+                              <option value="progress">In Progress</option>
+                              <option value="review">Review</option>
+                              <option value="done" selected>Done</option>
+                          </select>
+                          <button class="btn btn-sm btn-primary" onclick="advanceTodo(this, {{ done_todos.id }}, 'doneTable')">Move</button>
+                          <a class="btn btn-sm btn-danger" href="{% url 'delete_todo' done_todos.id %}">Delete</a>
+                      </td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateForm() {
+        var title = document.getElementById('title').value.trim();
+        var description = document.querySelector('textarea[name="description"]').value.trim();
+        var status = document.getElementById('select1').value;
+        console.log(status)
+        var submitButton = document.getElementById('submitBtn');
+
+        if (title === '' || description === '' || status=== '') {
             submitButton.disabled = true;
-          } else {
+        } else {
             submitButton.disabled = false;
-          }
         }
-        function getOption(counter) {
-            selectElement = document.querySelector('#select' + counter);
-            outputElement = document.querySelector('.output' + counter);
-            output = selectElement.value;
-            outputElement.textContent = output;
+    }
+
+    function submitForm() {
+        // Prevent the form from submitting
+        event.preventDefault();
+
+        // Your existing validation logic
+        validateForm();
+
+        // If the form is valid, proceed with moving the task
+        if (!document.getElementById('submitBtn').disabled) {
+            // Your existing AJAX request and table update logic
+            moveTodo(document.getElementById('select1'), 'new-todo-id', 'newTableId');
+
+            // Optionally, submit the form to the original endpoint
+            document.getElementById('todoForm').submit();
         }
-      </script></body>
-    </html>
+    }
+
+    function moveTodo(selectElement, todoId) {
+        var selectedStatus = selectElement.value;
     
+        // Log the request details
+        console.log(`Moving todo ${todoId} to ${selectedStatus}`);
     
+        // Perform an AJAX request to update the task status in the backend
+        fetch(`/move_todo_status/${todoId}/${selectedStatus}/`)
+          .then(response => response.json())
+          .then(data => {
+            // Handle the response, if needed
+            console.log(data);
+    
+            // Reload the page after updating the task
+            location.reload();
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
+
+      function advanceTodo(buttonElement, todoId, currentTableId) {
+        var currentRow = buttonElement.closest('tr');
+        var currentStatus = currentRow.querySelector('select').value;
+    
+        // Determine the next status based on the current status
+        var nextStatus;
+        switch (currentStatus) {
+            case 'inprogress':
+                nextStatus = 'inprogress';
+                break;
+            case 'review':
+                nextStatus = 'review';
+                break;
+            case 'done':
+                nextStatus = 'done';
+                break;
+            default:
+                nextStatus = 'inprogress';
+        }
+    
+        // Update the task status in the backend
+        fetch(`/update_todo_status/${todoId}/${nextStatus}/`)
+            .then(response => response.json())
+            .then(data => {
+                // Handle the response, if needed
+                console.log(data);
+    
+                // Update the tables and remove the row from the current table
+                updateTables(currentTableId, todoId, nextStatus);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+    
+    function updateTables(currentTableId, todoId, nextStatus) {
+        // Find the row in the current table
+        var currentTable = document.getElementById(currentTableId);
+        var currentRow = currentTable.querySelector(`tr[data-todo-id="${todoId}"]`);
+    
+        // Remove the row from the current table
+        currentRow.remove();
+    
+        // Append the row to the new table
+        var newTable;
+        // Add a case for each possible status
+        if (nextStatus === 'inprogress') {
+            newTable = document.getElementById('inprogressTable');
+        } else if (nextStatus === 'review') {
+            newTable = document.getElementById('reviewTable');
+        } else if (nextStatus === 'done') {
+            newTable = document.getElementById('doneTable');
+        }
+    
+        var newRow = currentRow.cloneNode(true);
+        newTable.querySelector('tbody').appendChild(newRow);
+    
+        // Update the task status in the cloned row
+        newRow.querySelector('p').textContent = `Task Status: ${nextStatus}`;
+    
+        // Enable the dropdown in the new row
+        newRow.querySelector('select').disabled = false;
+    }
+</script>
+
+</body>
+</html>
